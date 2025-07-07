@@ -4,8 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'AscomJobs') }} - Dashboard</title>
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
@@ -60,6 +65,9 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Welcome</h3>
+                                </div>
                                 <div class="card-body">
                                     <p>Welcome, {{ Auth::user()->name }}!</p>
                                 </div>
@@ -73,8 +81,11 @@
             <strong>Copyright © 2025 AscomJobs.</strong>
         </footer>
     </div>
+    <!-- jQuery -->
     <script src="{{ asset('vendor/adminlte/plugins/jquery/jquery.min.js') }}"></script>
+    <!-- Bootstrap 4 -->
     <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- AdminLTE App -->
     <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
 </body>
 </html>
