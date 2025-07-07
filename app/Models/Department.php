@@ -8,9 +8,8 @@ class Department extends Model
 {
     protected $fillable = ['name', 'code', 'description'];
 
-    // Relationship to be added later with User/Applicant model
-    // public function applicants()
-    // {
-    //     return $this->hasMany(User::class); // Assuming User model for applicants
-    // }
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
+    }
 }
