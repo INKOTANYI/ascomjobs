@@ -2,146 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Application;
-use App\Models\Department;
-use App\Models\Province;
-use App\Models\District;
-use App\Models\Sector;
+use App\Models\JobApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 
 class ApplicationController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
-    public function index()
-    {
-        // Check if user is admin (hardcoded password check)
-        if (Auth::check() && Auth::user()->password === bcrypt('admin123')) {
-            $applications = Application::with(['department', 'province', 'district', 'sector'])->get();
-            $departments = Department::all();
-            $provinces = Province::all();
-
-            return view('applications', compact('applications', 'departments', 'provinces'));
-        }
-        abort(403, 'Unauthorized action. Only the admin can manage applications.');
-    }
-
     public function store(Request $request)
     {
-        // Check if user is admin (hardcoded password check)
-        if (Auth::check() && Auth::user()->password === bcrypt('admin123')) {
-            $request->validate([
-                'names' => 'required|string|max:255',
-                'phone' => 'required|string|unique:applications,phone|max:15',
-                'email' => 'required|email|unique:applications,email|max:255',
-                'id_number' => 'required|string|unique:applications,id_number|max:20',
-                'department_id' => 'required|exists:departments,id',
-                'cv' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-                'degree' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-                'id_doc' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                'province_id' => 'required|exists:provinces,id',
-                'district_id' => 'required|exists:districts,id',
-                'sector_id' => 'required|exists:sectors,id',
-            ]);
+        $request->validate([
+            'names' => 'required|string|max:255',
+            'phone' => 'required|string|regex:/^(?:\+250|07)\d{8}$/|unique:job_applications,phone',
+            'email' => 'required|email|unique:job_applications,email',
+            'id_number' => 'required|string|regex:/^\d{16}$/|unique:job_applications,id_number',
+            'department_id' => 'required|exists:departments,id',
+            'province_id' => 'required|in:1', // Hardcoded to Kigali City
+            'district_id' => 'required|in:1', // Hardcoded to Gasabo
+            'sector_id' => 'required|in:1,2,3,4,5', // Hardcoded to Gisozi, Kimihurura, Kacyiru, Remera, Kimironko
+            'cv' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+            'degree' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+            'id_doc' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ]);
 
-            $data = $request->only(['names', 'phone', 'email', 'id_number', 'department_id', 'province_id', 'district_id', 'sector_id']);
+        $data = $request->all();
 
-            if ($request->hasFile('cv')) {
-                $data['cv'] = $request->file('cv')->store('applications/cvs', 'public');
+        // Handle file uploads
+        $filePaths = [];
+        foreach (['cv', 'degree', 'id_doc'] as $fileField) {
+            if ($request->hasFile($fileField)) {
+                $filePaths[$fileField] = $request->file($fileField)->store('applications/' . time(), 'public');
             }
-            if ($request->hasFile('degree')) {
-                $data['degree'] = $request->file('degree')->store('applications/degrees', 'public');
-            }
-            if ($request->hasFile('id_doc')) {
-                $data['id_doc'] = $request->file('id_doc')->store('applications/id_docs', 'public');
-            }
-
-            $application = Application::create($data);
-
-            return response()->json([
-                'success' => true,
-                'application' => $application->load(['department', 'province', 'district', 'sector'])
-            ]);
         }
-        abort(403, 'Unauthorized action. Only the admin can manage applications.');
-    }
 
-    public function update(Request $request, $id)
-    {
-        // Check if user is admin (hardcoded password check)
-        if (Auth::check() && Auth::user()->password === bcrypt('admin123')) {
-            $application = Application::findOrFail($id);
+        $data['cv_path'] = $filePaths['cv'] ?? null;
+        $data['degree_path'] = $filePaths['degree'] ?? null;
+        $data['id_doc_path'] = $filePaths['id_doc'] ?? null;
 
-            $request->validate([
-                'names' => 'required|string|max:255',
-                'phone' => 'required|string|unique:applications,phone,' . $application->id . '|max:15',
-                'email' => 'required|email|unique:applications,email,' . $application->id . '|max:255',
-                'id_number' => 'required|string|unique:applications,id_number,' . $application->id . '|max:20',
-                'department_id' => 'required|exists:departments,id',
-                'cv' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-                'degree' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-                'id_doc' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                'province_id' => 'required|exists:provinces,id',
-                'district_id' => 'required|exists:districts,id',
-                'sector_id' => 'required|exists:sectors,id',
-            ]);
+        JobApplication::create($data);
 
-            $data = $request->only(['names', 'phone', 'email', 'id_number', 'department_id', 'province_id', 'district_id', 'sector_id']);
-
-            if ($request->hasFile('cv')) {
-                if ($application->cv) {
-                    Storage::disk('public')->delete($application->cv);
-                }
-                $data['cv'] = $request->file('cv')->store('applications/cvs', 'public');
-            }
-            if ($request->hasFile('degree')) {
-                if ($application->degree) {
-                    Storage::disk('public')->delete($application->degree);
-                }
-                $data['degree'] = $request->file('degree')->store('applications/degrees', 'public');
-            }
-            if ($request->hasFile('id_doc')) {
-                if ($application->id_doc) {
-                    Storage::disk('public')->delete($application->id_doc);
-                }
-                $data['id_doc'] = $request->file('id_doc')->store('applications/id_docs', 'public');
-            }
-
-            $application->update($data);
-
-            return response()->json([
-                'success' => true,
-                'application' => $application->load(['department', 'province', 'district', 'sector'])
-            ]);
-        }
-        abort(403, 'Unauthorized action. Only the admin can manage applications.');
-    }
-
-    public function destroy($id)
-    {
-        // Check if user is admin (hardcoded password check)
-        if (Auth::check() && Auth::user()->password === bcrypt('admin123')) {
-            $application = Application::findOrFail($id);
-
-            if ($application->cv) {
-                Storage::disk('public')->delete($application->cv);
-            }
-            if ($application->degree) {
-                Storage::disk('public')->delete($application->degree);
-            }
-            if ($application->id_doc) {
-                Storage::disk('public')->delete($application->id_doc);
-            }
-
-            $application->delete();
-
-            return response()->json(['success' => true]);
-        }
-        abort(403, 'Unauthorized action. Only the admin can manage applications.');
+        return response()->json(['message' => 'Application submitted successfully!']);
     }
 }

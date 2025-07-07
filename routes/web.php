@@ -8,5 +8,5 @@ use App\Http\Controllers\ApplicationController;
 Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
 Auth::routes();
 
-Route::get('/auth/dashboard', [HomeController::class, 'index'])->name('home')->middleware('auth');
+Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard')->middleware('auth');
 Route::resource('applications', ApplicationController::class)->middleware('auth');
