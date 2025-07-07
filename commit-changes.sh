@@ -1,3 +1,3 @@
 git add .
-git commit -m "Fix login route and ensure /auth/dashboard redirect"
+git commit -m "Add province, district, and sector migrations and seeders"
 git push origin master
