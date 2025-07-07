@@ -1,6 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\JobController;
+use App\Http\Controllers\HomeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -8,9 +8,4 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home')->middleware('auth');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
-    Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
-});
+Route::get('/auth/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home')->middleware('auth');
